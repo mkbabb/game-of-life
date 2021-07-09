@@ -127,8 +127,6 @@ public class GameOfLife {
             game.printGrid();
             System.out.println();
             game.update();
-
         }
-
     }
 }
