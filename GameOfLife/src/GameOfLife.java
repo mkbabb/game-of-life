@@ -1,8 +1,5 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * This program emulates Conway's game of life.
@@ -37,7 +34,6 @@ public class GameOfLife {
     }
 
     public void printGrid() {
-
         for (int i = 0; i < this.rows; i++) {
             System.out.print("[");
             for (int j = 0; j < this.cols; j++) {
@@ -57,7 +53,7 @@ public class GameOfLife {
         for (var i = -1; i <= 1; i++) {
             for (var j = -1; j <= 1; j++) {
                 var rowIx = row + i;
-                var colIx = row + j;
+                var colIx = col + j;
 
                 var isInvalid = (i == 0 && j == 0) || (rowIx >= rows) || (colIx >= cols) || (rowIx < 0) || (colIx < 0);
 
