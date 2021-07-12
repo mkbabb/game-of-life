@@ -1,3 +1,6 @@
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -8,9 +11,21 @@ public class GameOfLife {
     int rows;
     int cols;
 
+    /**
+     * Current game board. Each cell is represented as either alive (1) or dead (0).
+     */
     Integer[][] grid;
+    /** Next generation's game board (used after update). */
     Integer[][] futureGrid;
 
+    /**
+     * Create the game of life board (rows, cols) in size. If an initial grid is
+     * provided, use that to seed the board. Else, randomize the game board.
+     * 
+     * @param rows        input rows.
+     * @param cols        input cols.
+     * @param initialGrid initial grid of values.
+     */
     public GameOfLife(int rows, int cols, Optional<Integer[][]> initialGrid) {
         this.rows = rows;
         this.cols = cols;
@@ -33,6 +48,9 @@ public class GameOfLife {
         }
     }
 
+    /**
+     * Prints the current game board (grid).
+     */
     public void printGrid() {
         for (int i = 0; i < this.rows; i++) {
             System.out.print("[");
@@ -47,6 +65,13 @@ public class GameOfLife {
         }
     }
 
+    /**
+     * Counts the total number of neighbors for a given cell at position [row, col].
+     * 
+     * @param row input y value.
+     * @param col input x value.
+     * @return number of neighbors.
+     */
     public int countNeighbors(int row, int col) {
         var total = 0;
 
@@ -55,18 +80,26 @@ public class GameOfLife {
                 var rowIx = row + i;
                 var colIx = col + j;
 
+                // Exclude the centroidal value + out of bounds cells.
                 var isInvalid = (i == 0 && j == 0) || (rowIx >= rows) || (colIx >= cols) || (rowIx < 0) || (colIx < 0);
 
                 if (!isInvalid) {
                     total += this.grid[rowIx][colIx];
                 }
-
             }
         }
 
         return total;
     }
 
+    /**
+     * Applies the game's rule set to a given cell, given its neighbor count.
+     * Updates the future grid with the cell's calculated value.
+     * 
+     * @param row       input row.
+     * @param col       input col.
+     * @param neighbors neighbor count.
+     */
     public void evaluateCell(int row, int col, int neighbors) {
         var cell = this.grid[row][col];
 
@@ -83,6 +116,15 @@ public class GameOfLife {
         this.futureGrid[row][col] = cell;
     }
 
+    /**
+     * Main update function for one generation: spawns a thread for each cell, (i,
+     * j), and applies the game of life's rule set thereto.
+     * 
+     * After the generation is completed, the future game board is propagated to the
+     * current board, and then reset.
+     * 
+     * @throws InterruptedException erm.
+     */
     public void update() throws InterruptedException {
         final var threads = new ArrayList<Thread>();
 
@@ -116,12 +158,54 @@ public class GameOfLife {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        final var rows = 5;
-        final var cols = 5;
-        final var generations = 10;
+    /**
+     * Parses an input file for seeding a game with initial values. This is a space
+     * delimitated file, with the first line containing the row and column count of
+     * the board.
+     * 
+     * @param filename input file name.
+     * @return generated game of life.
+     * @throws IOException erm.
+     */
+    public static GameOfLife parseFile(String filename) throws IOException {
+        final var path = Paths.get(filename);
 
-        final var game = new GameOfLife(rows, cols, Optional.empty());
+        final var header = Files.lines(path).findFirst().get().split(" ");
+        final var rows = Integer.parseInt(header[0]);
+        final var cols = Integer.parseInt(header[1]);
+
+        final var initialGrid = new Integer[rows][cols];
+
+        var i = 0;
+        for (final var line : (Iterable<String>) Files.lines(path).skip(1)::iterator) {
+            final var items = line.split(" ");
+            var j = 0;
+
+            for (final var item : items) {
+                initialGrid[i][j] = Integer.parseInt(item);
+                j += 1;
+            }
+            i += 1;
+
+        }
+
+        return new GameOfLife(rows, cols, Optional.of(initialGrid));
+    }
+
+    /**
+     * Runs the game of life given an input file (described above), and number of
+     * generations to run for.
+     * 
+     * Each generation is printed *before* being updated.
+     * 
+     * @param args input args: filename and generation count.
+     * @throws Exception erm.
+     */
+    public static void main(String[] args) throws Exception {
+        final var filename = args[0];
+        final var generations = Integer.parseInt(args[1]);
+
+        final var game = parseFile(filename);
 
         for (var i = 0; i < generations; i++) {
             game.printGrid();
